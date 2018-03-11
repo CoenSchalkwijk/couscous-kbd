@@ -51,24 +51,34 @@ module switch_stencil () {
         };
     };
 }
-
-// Orthagonal keyboard
+// ------------------------------
+// Orthagonal keyplate
+// ------------------------------
     number_of_columns = 7;
     keys_per_column = 5;
-    row_spacing_top = 5; // todo per col, rename col spa
-    row_spacing_bottom = 10; // todo: per col, rename col spa
+
+    col_margin_top = [5, 5, 10, 10, 10, 10, 10];
+
+    col_spacing_bottom = 10;  // todo: per col, sensible?
     spacing_top_bottom = 2; // todo: per row, modulo length
     spacing_left_right = 2; // todo: per col, modulo length
     // todo: leftmost border, rightmost border,
     // add a surrounding border...
 
-module orthagonal_key_row () {
+
+module orthagonal_key_row (top_margin) {
     difference(){
         key_plate_thickness = (switch_mount_height + switch_mount_plate_height);
-        plate_height = (keys_per_column * (key_stencil_width + spacing_top_bottom)) + row_spacing_top + row_spacing_bottom;
-        
+
+        // todo: remove usage of max(col_margin_top), should be provided as param.
+        plate_height = (keys_per_column * (key_stencil_width + spacing_top_bottom)) + max(col_margin_top) + col_spacing_bottom;
+
         // Create & position key plate
-        translate ([(plate_height/2)-(key_stencil_height/2)-row_spacing_top,0,key_plate_thickness/2])
+        translate ([
+            (plate_height/2)-(key_stencil_height/2),
+            0,
+            key_plate_thickness/2
+        ])
         {
             cube([
                 plate_height,
@@ -82,7 +92,11 @@ module orthagonal_key_row () {
             for(row=[0:keys_per_column-1]) 
             {
                 // Place key switch stencil with top/bottom spacing
-                translate([row * (key_stencil_width + spacing_top_bottom),0,0])
+                translate([
+                    (row * (key_stencil_width + spacing_top_bottom))+ top_margin,
+                    0,
+                    0
+                ])
                 {
                     switch_stencil();
                 }
@@ -91,10 +105,21 @@ module orthagonal_key_row () {
     };
 } // orthagonal_key_row
 
+
 for(col=[0:number_of_columns-1])
 {
-    translate([0, col * (key_stencil_width + (spacing_left_right*2)),0])
+    top_margin = col_margin_top[col % len(col_margin_top)];
+
+    translate([
+        0,
+        col * (key_stencil_width + (spacing_left_right*2)),
+        0
+    ])
     {
-        orthagonal_key_row();
+        orthagonal_key_row(
+            top_margin
+        );
     }
+
+    // Hm: OpenSCAD does not support/do a = a + 1; kind of assignments.
 }
