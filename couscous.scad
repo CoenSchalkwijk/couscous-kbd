@@ -54,7 +54,7 @@ module switch_stencil () {
 // ------------------------------
 // Orthagonal keyplate
 // ------------------------------
-    number_of_columns = 7;
+    number_of_columns = 7; // todo: amount per col with 'mod trick'
     keys_per_column = 5;
 
     col_margin_top = [5, 5, 10, 10, 10, 10, 10];

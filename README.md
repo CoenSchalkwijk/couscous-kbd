@@ -7,7 +7,10 @@ I wanted to add some changes to the redox keyboard, but can't make a 3D design i
 
 First aim is to copy MattDB's design in parametric form.
 
-## Sample
+Cherry MX Switch stencil:
+![switch_stencil](samples/switch_stencil.png)
+
+## Samples
 
 A 5x7 keyplate for Cherry MX switches.
 ![Sample 0001](samples/0001_5x7_keyplate.png)
