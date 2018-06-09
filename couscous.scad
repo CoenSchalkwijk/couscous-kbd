@@ -1,33 +1,48 @@
+// ----------------------------
+//  OpenSCAD settings
+// ----------------------------
 $fn=100;
 
-// User settings:
-    switch_width = 14;
-    switch_mount_plate_width = switch_width * 1.07;
-    switch_mount_plate_height = 1.5;
-    switch_mount_height = 1.5;
-    switch_mount_rounding = 0.3;
-
-// Derived values:
+// ----------------------------
+//  User settings
+// ----------------------------
+switch_width = 14;
+switch_height = switch_width;
+switch_mount_plate_width = switch_width * 1.07;
+switch_mount_plate_height = 1.5;
+switch_mount_height = 1.5;
+switch_mount_rounding = 0.3;
+    
+// ----------------------------
+//  Derived settings
+// ----------------------------
 key_stencil_width = switch_width+switch_mount_rounding;
 key_stencil_height = switch_width+switch_mount_rounding;
 
-module switch_stencil () {
-    
+module switch_stencil (txt="..") {
+    translate([
+        -switch_mount_plate_height/.3,
+        -switch_mount_plate_height/.5,
+        3
+    ])
+    {
+        color("red") text(txt, font="Liberation Mono", size = 3);
+    }
     // Bottom
     translate([0,0,switch_mount_plate_height/2])
     {
         minkowski()
         {
-        cube ([
-            switch_mount_plate_width - switch_mount_rounding,
-            switch_mount_plate_width - switch_mount_rounding,
-            switch_mount_plate_height/1.99
-        ],center=true);
-        cylinder(
-            r=switch_mount_rounding,
-            h=switch_mount_plate_height/2,
-            center=true
-        );
+            cube ([
+                switch_mount_plate_width - switch_mount_rounding,
+                switch_mount_plate_width - switch_mount_rounding,
+                switch_mount_plate_height/1.99
+            ],center=true);
+            cylinder(
+                r=switch_mount_rounding,
+                h=switch_mount_plate_height/2,
+                center=true
+            );
         }
     };
     
@@ -50,35 +65,7 @@ module switch_stencil () {
         };
     };
 }
-// ------------------------------
-// Orthagonal keyplate
-// ------------------------------
-    number_of_columns = 7;
-    keys_per_column = [5,5,5,5,4,4,2]; //todo: add ammount check, should be same as num_of_col
-    col_margin_top = [5, 5, 10, 15, 10, 5, 20]; //todo: add ammount check, should be same as num_of_col
 
-    col_spacing_bottom = 10;  // todo: per col, sensible?
-    spacing_top_bottom = 2; // todo: per row, modulo length
-    spacing_left_right = 2; // todo: per col, modulo length
-    // todo: leftmost border, rightmost border,
-    // add a surrounding border...
-
-
-module orthagonal_key_col (top_margin, keys)
-{
-    for(row=[0:keys-1])
-    {
-        // Place key switch stencil with top/bottom spacing
-        translate([
-            (row * (key_stencil_width + spacing_top_bottom))+ top_margin,
-            0,
-            0
-        ])
-        {
-            switch_stencil();
-        }
-    }
-}
 
 // ---------------------
 // Screw & hole template
@@ -110,55 +97,112 @@ module screw_hole() {
     };
 }
 
-module keys_plate_left() {
-    for(col=[0:number_of_columns-1]) {
-        top_margin = col_margin_top[col % len(col_margin_top)];
+function findOffsetX(def, row, max_col, col=0) = 
+    def[col][row][2][0] + (col < max_col ? findOffsetX(def, row, max_col, col + 1) :0);
 
-        translate([
-            0,
-            col * (key_stencil_width + (spacing_left_right*2)),
-            0
-        ]) {
-            orthagonal_key_col(
-                top_margin,
-                keys_per_column[col]
-            );
-        };
-    };
+// Expects an X by Y grid
+// todo: mark key as skipable? to support other configurations
+
+key_plate_def = [
+    /* [
+            x,
+            y,
+            margins[left, top, right, bottom ],
+            tilt (clockwise, in deg),
+            label/tag
+        ]
+    */
+    [
+        /* First column: function keys */
+        [0, 0, [4,4], 0, "F5"],
+        [0, 1, [4,4], 0, "F4"],
+        [0, 2, [4,4], 0, "F3"],
+        [0, 3, [4,4], 0, "F2"],
+        [0, 4, [4,4], 0, "F1"], 
+    ],
+    [
+        /* Second column: control keys */
+        [1, 0, [4,4], 0, "CTRL"],
+        [1, 1, [6,4], 0, "SHFT"],
+        [1, 2, [8,4], 0, "`~"],
+        [1, 3, [8,4], 0, "TAB"],
+        [1, 4, [10,4], 0, "ESC"],
+    ],
+    [
+        /* Third column: mostly alpha-num #1 */
+        [2, 0, [4,4], 0, "ALT"],
+        [2, 1, [4,4], 0, "Z"],
+        [2, 2, [4,4], 0, "A"],
+        [2, 3, [4,4], 0, "Q"],
+        [2, 4, [4,4], 0, "1!"],
+    ],
+    [
+        /* Fourth column: mostly alpha-num #1 */
+        [3, 0, [4,4], 0, "-_"],
+        [3, 1, [4,4], 0, "X"],
+        [3, 2, [4,4], 0, "S"],
+        [3, 3, [4,4], 0, "W"],
+        [3, 4, [4,4], 0, "2@"],
+    ],
+    [
+        /* Fifth column: mostly alpha-num #1 */
+        [4, 0, [4,4], 0, "=+"],
+        [4, 1, [4,4], 0, "C"],
+        [4, 2, [4,4], 0, "D"],
+        [4, 3, [4,4], 0, "E"],
+        [4, 4, [4,4], 0, "3#"],
+    ],
+    [
+        /* Sixth column: mostly alpha-num #1 */
+        [5, 0, [4,4], 0, "SPC"],
+        [5, 1, [4,4], 0, "V"],
+        [5, 2, [4,4], 0, "F"],
+        [5, 3, [4,4], 0, "R"],
+        [5, 4, [4,4], 0, "4$"],
+    ],
+    [
+        /* Seventh column: mostly alpha-num #1, first thumb ([T]) key*/
+        [6, 0, [6,4], 20, "[T]"],
+        [6, 1, [4,4], 0, "B"],
+        [6, 2, [4,4], 0, "G"],
+        [6, 3, [4,4], 0, "T"],
+        [6, 4, [4,4], 0, "5%"],
+    ],
+    [
+        /* Eight column: special keys */
+        [7, 0, [6,4], 30, "[MU]"],  // Mute 🔇
+        [7, 1, [6,4], 30, "[V+]"],
+        [7, 2, [6,4], 30, "[V-]"],
+        [7, 3, [6,4], 0, "[\u2193]"], // Layer down, Down arrow
+        [7, 4, [6,4], 0, "[\u2191]"], // Layer up, Up arrow
+    ]
+];
+
+margin_left = 0;
+margin_top = 1;
+margin_right = 2;
+margin_bottom = 3;
+
+module keys_for_plate(def) {
+    
+    for(col=[0:len(def)-1]) {
+        for(row=[0:len(def[col])-1]) {
+            x_pos = def[col][row][0];
+            y_pos = def[col][row][1];
+
+            key_margins = def[col][row][2];
+                  
+            echo("::", def[col][row][0]);
+            translate([
+                findOffsetX(def, row, col) + ((x_pos +1) * switch_width),
+                (y_pos +1) * (key_margins[margin_top] + switch_height),
+                0]) { 
+                    rotate(-def[col][row][3]){
+                        switch_stencil(def[col][row][4]);
+                    }
+            }
+        }
+    }
 }
 
-function calc_col_height(col) =
-    (keys_per_column[col] * (key_stencil_height + spacing_top_bottom)) +
-    col_margin_top[col] +
-    col_spacing_bottom;
-
-function max_col_height(col=0) = max(
-    calc_col_height(col),
-    (col < number_of_columns-1 ? max_col_height( col + 1) :0)
-);
-
-
-module key_plate() {
-    plate_height = max_col_height();
-    plate_width = (key_stencil_width + (spacing_left_right*2)) * number_of_columns;
-    key_plate_thickness = (switch_mount_height + switch_mount_plate_height);
-
-    difference() {
-        // Create & position key plate
-        translate ([
-            (plate_height/2)-(key_stencil_height/2),
-            (plate_width/2)-(key_stencil_width/2)- spacing_left_right,
-            key_plate_thickness/2
-        ]) {
-            cube([
-                plate_height,
-                plate_width,
-                switch_mount_height + switch_mount_plate_height
-            ], center=true);
-
-        };
-        keys_plate_left();
-    };
-}
-
-key_plate();
+keys_for_plate(key_plate_def);
